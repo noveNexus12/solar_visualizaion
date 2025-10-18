@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { AlertTriangle, Bell, Info } from 'lucide-react';
+import { AlertTriangle, Bell, Info, CheckCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { apiService } from '@/services/api.service';
@@ -15,15 +15,13 @@ export default function AlertsView() {
     const interval = setInterval(() => {
       loadAlerts();
       // Simulate new alert notifications
-      if (Math.random() > 0.7) {
+      if (alerts.length && Math.random() > 0.7) {
         const randomAlert = alerts[Math.floor(Math.random() * alerts.length)];
-        if (randomAlert) {
-          showAlertNotification(randomAlert);
-        }
+        if (randomAlert) showAlertNotification(randomAlert);
       }
     }, 15000);
     return () => clearInterval(interval);
-  }, []);
+  }, [alerts]);
 
   const loadAlerts = async () => {
     try {
@@ -37,9 +35,14 @@ export default function AlertsView() {
   };
 
   const showAlertNotification = (alert: Alert) => {
-    const icon = alert.severity === 'critical' ? '🔴' : alert.severity === 'warning' ? '⚠️' : 'ℹ️';
+    const icon =
+      alert.severity === 'critical'
+        ? '🔴'
+        : alert.severity === 'warning'
+        ? '⚠️'
+        : 'ℹ️';
     toast(`${icon} ${alert.message}`, {
-      description: `Pole: ${alert.pole_id}`,
+      description: `Pole: ${alert.pole_id} | Type: ${alert.alert_type} | Status: ${alert.alert_status}`,
       duration: 5000,
     });
   };
@@ -70,7 +73,7 @@ export default function AlertsView() {
     const date = new Date(timestamp);
     const now = new Date();
     const diff = Math.floor((now.getTime() - date.getTime()) / 1000 / 60);
-    
+
     if (diff < 1) return 'Just now';
     if (diff < 60) return `${diff} min ago`;
     const hours = Math.floor(diff / 60);
@@ -83,7 +86,9 @@ export default function AlertsView() {
     <div className="space-y-6 animate-fade-in">
       <div>
         <h1 className="text-3xl font-bold text-foreground">Alerts & Notifications</h1>
-        <p className="text-muted-foreground mt-1">System alerts and pole status notifications</p>
+        <p className="text-muted-foreground mt-1">
+          System alerts and pole status notifications
+        </p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
@@ -138,20 +143,40 @@ export default function AlertsView() {
               {alerts.map((alert) => (
                 <div
                   key={alert.id}
-                  className="flex items-start gap-4 p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors"
+                  className="flex flex-col gap-2 p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors"
                 >
-                  <div className="mt-0.5">{getAlertIcon(alert.severity)}</div>
-                  <div className="flex-1 space-y-1">
-                    <div className="flex items-center gap-2">
-                      <p className="font-medium text-foreground">{alert.message}</p>
-                      <Badge variant={getAlertColor(alert.severity) as any} className="capitalize">
-                        {alert.severity}
-                      </Badge>
-                    </div>
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <span>Pole: {alert.pole_id}</span>
-                      <span>•</span>
-                      <span>{formatTimestamp(alert.timestamp)}</span>
+                  <div className="flex items-start gap-4">
+                    <div className="mt-0.5">{getAlertIcon(alert.severity)}</div>
+                    <div className="flex-1 space-y-1">
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium text-foreground">{alert.message}</p>
+                        <Badge
+                          variant={getAlertColor(alert.severity) as any}
+                          className="capitalize"
+                        >
+                          {alert.severity}
+                        </Badge>
+                        <Badge
+                          variant={alert.alert_status === 'RESOLVED' ? 'secondary' : 'destructive'}
+                          className="capitalize"
+                        >
+                          {alert.alert_status}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <span>Pole: {alert.pole_id}</span>
+                        <span>•</span>
+                        <span>Type: {alert.alert_type}</span>
+                        <span>•</span>
+                        <span>{formatTimestamp(alert.timestamp)}</span>
+                      </div>
+                      {alert.technician_id && (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <span>Technician: {alert.technician_id}</span>
+                          {alert.action_taken && <span>• Action: {alert.action_taken}</span>}
+                          {alert.remarks && <span>• Remarks: {alert.remarks}</span>}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

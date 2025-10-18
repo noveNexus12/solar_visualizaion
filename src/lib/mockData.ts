@@ -9,6 +9,12 @@ export interface Pole {
 }
 
 export interface TelemetryData {
+  data_quality: any;
+  data_source: any;
+  signal_strength: any;
+  light_intensity: any;
+  battery_current: any;
+  battery_voltage: any;
   timestamp: string;
   solar_voltage: number;
   energy_generated: number;
@@ -18,6 +24,11 @@ export interface TelemetryData {
 }
 
 export interface Alert {
+  remarks: any;
+  action_taken: any;
+  technician_id: any;
+  alert_status: any;
+  alert_type: any;
   id: string;
   pole_id: string;
   message: string;
