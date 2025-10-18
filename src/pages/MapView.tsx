@@ -80,11 +80,12 @@ export default function MapView() {
         </CardHeader>
         <CardContent>
           <div className="h-[600px] w-full rounded-lg overflow-hidden border border-border">
-            {!loading && (
+            {!loading && poles.length > 0 && (
               <MapContainer
-                center={[20.5937, 78.9629]} // Center of India
+                center={[20.5937, 78.9629]}
                 zoom={5}
                 style={{ height: '100%', width: '100%' }}
+                scrollWheelZoom={true}
               >
                 <TileLayer
                   attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -132,6 +133,11 @@ export default function MapView() {
                   </Marker>
                 ))}
               </MapContainer>
+            )}
+            {loading && (
+              <div className="h-full flex items-center justify-center bg-muted/10">
+                <div className="text-muted-foreground">Loading map...</div>
+              </div>
             )}
           </div>
         </CardContent>
