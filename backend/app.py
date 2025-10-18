@@ -87,39 +87,66 @@ def get_pole_details(pole_id):
 
 @app.route('/api/telemetry', methods=['GET'])
 def get_telemetry():
-    pole_id = request.args.get('pole_id')  # get pole_id from query param
+    from flask import request
+    pole_id = request.args.get('pole_id')
+
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-    
-    query = """
-        SELECT
-            pole_id,
-            timestamp,
-            solar_voltage,
-            battery_voltage,
-            battery_percentage,
-            load_current,
-            energy_generated,
-            energy_consumed,
-            light_intensity,
-            signal_strength
-        FROM telemetry_data
-    """
-    params = ()
+
     if pole_id:
-        query += " WHERE pole_id = %s"
-        params = (pole_id,)
-    
-    query += " ORDER BY timestamp DESC LIMIT 24"
-    cursor.execute(query, params)
+        # Fetch data only for the selected pole
+        cursor.execute("""
+            SELECT
+                pole_id,
+                timestamp,
+                solar_voltage,
+                battery_voltage,
+                battery_current,
+                battery_percentage,
+                load_current,
+                energy_generated,
+                energy_consumed,
+                light_intensity,
+                signal_strength,
+                data_source,
+                data_quality
+            FROM telemetry_data
+            WHERE pole_id = %s
+            ORDER BY timestamp DESC
+            LIMIT 24
+        """, (pole_id,))
+    else:
+        # Default: return combined data (optional)
+        cursor.execute("""
+            SELECT
+                pole_id,
+                timestamp,
+                solar_voltage,
+                battery_voltage,
+                battery_current,
+                battery_percentage,
+                load_current,
+                energy_generated,
+                energy_consumed,
+                light_intensity,
+                signal_strength,
+                data_source,
+                data_quality
+            FROM telemetry_data
+            ORDER BY timestamp DESC
+            LIMIT 24
+        """)
+
     data = cursor.fetchall()
     conn.close()
-    
+
+    # Convert timestamps to ISO format
     for row in data:
         if row['timestamp']:
             row['timestamp'] = row['timestamp'].isoformat()
-    
+
     return jsonify(data)
+
 
 
 

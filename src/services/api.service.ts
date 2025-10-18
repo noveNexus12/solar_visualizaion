@@ -16,11 +16,12 @@ export const apiService = {
   },
 
   // Get telemetry data
-  getTelemetryData: async (p0: { pole_id: string; }) => {
-    const response = await fetch(`${API_BASE_URL}/telemetry`);
-    if (!response.ok) throw new Error('Failed to fetch telemetry data');
-    return await response.json();
-  },
+  getTelemetryData: async ({ pole_id }: { pole_id: string }) => {
+  const response = await fetch(`${API_BASE_URL}/telemetry?pole_id=${pole_id}`);
+  if (!response.ok) throw new Error('Failed to fetch telemetry data');
+  return await response.json();
+},
+
 
   // Get alerts
   getAlerts: async () => {
