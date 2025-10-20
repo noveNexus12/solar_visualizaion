@@ -1,18 +1,19 @@
-from flask import Flask, jsonify,request
-import mysql.connector
+from flask import Flask, jsonify
 from flask_cors import CORS
+from auth import auth_bp
+from db import get_db_connection  # single source for DB connection
 
 app = Flask(__name__)
-CORS(app)
 
-# Database connection
-def get_db_connection():
-    return mysql.connector.connect(
-        host='localhost',
-        user='root',
-        password='incorrect@11',
-        database='solar_dashboard'
-    )
+# ✅ CORS: allow your frontend
+CORS(app, resources={r"/api/*": {"origins": ["http://localhost:8080", "http://127.0.0.1:8080"]}}, supports_credentials=True)
+
+
+# Register auth blueprint
+app.register_blueprint(auth_bp, url_prefix='/api/auth')
+
+
+# ------------------------------- Routes (unchanged) -------------------------------
 
 @app.route('/api/poles', methods=['GET'])
 def get_poles():
@@ -26,7 +27,7 @@ def get_poles():
             latitude,
             longitude,
             status,
-            battery_percentage,   -- ✅ Make sure this is included exactly as this
+            battery_percentage,
             communication_status,
             state,
             district,
@@ -46,7 +47,6 @@ def get_poles():
             row['update_time'] = row['update_time'].isoformat()
     
     return jsonify(data)
-
 
 
 @app.route('/api/poles/<pole_id>', methods=['GET'])
@@ -94,7 +94,6 @@ def get_telemetry():
     cursor = conn.cursor(dictionary=True)
 
     if pole_id:
-        # Fetch data only for the selected pole
         cursor.execute("""
             SELECT
                 pole_id,
@@ -116,7 +115,6 @@ def get_telemetry():
             LIMIT 24
         """, (pole_id,))
     else:
-        # Default: return combined data (optional)
         cursor.execute("""
             SELECT
                 pole_id,
@@ -140,7 +138,6 @@ def get_telemetry():
     data = cursor.fetchall()
     conn.close()
 
-    # Convert timestamps to ISO format
     for row in data:
         if row['timestamp']:
             row['timestamp'] = row['timestamp'].isoformat()
@@ -148,15 +145,11 @@ def get_telemetry():
     return jsonify(data)
 
 
-
-
-
 @app.route('/api/alerts', methods=['GET'])
 def get_alerts():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
     
-    # Explicitly select all required alert fields
     cursor.execute("""
         SELECT
             pole_id,
@@ -176,44 +169,32 @@ def get_alerts():
     data = cursor.fetchall()
     conn.close()
     
-    # Format datetime to ISO string for frontend
     for row in data:
         if row['timestamp']:
             row['timestamp'] = row['timestamp'].isoformat()
     
     return jsonify(data)
 
+
 @app.route('/api/stats', methods=['GET'])
 def get_stats():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
 
-    # Total poles
     cursor.execute("SELECT COUNT(*) AS total FROM poles")
     total = cursor.fetchone()['total']
 
-    # Active / inactive (use either 'status' or 'led_status')
-    cursor.execute("""
-        SELECT COUNT(*) AS active 
-        FROM poles 
-        WHERE status='ON' OR led_status='ON'
-    """)
+    cursor.execute("SELECT COUNT(*) AS active FROM poles WHERE status='ON' OR led_status='ON'")
     active = cursor.fetchone()['active']
 
-    cursor.execute("""
-        SELECT COUNT(*) AS inactive 
-        FROM poles 
-        WHERE status='OFF' OR led_status='OFF'
-    """)
+    cursor.execute("SELECT COUNT(*) AS inactive FROM poles WHERE status='OFF' OR led_status='OFF'")
     inactive = cursor.fetchone()['inactive']
 
-    # Active alerts only
     cursor.execute("SELECT COUNT(*) AS alerts FROM alerts WHERE alert_status='ACTIVE'")
     alerts = cursor.fetchone()['alerts']
 
     conn.close()
 
-    # ✅ Match the frontend field names
     return jsonify({
         "total": total,
         "active": active,
@@ -223,4 +204,4 @@ def get_stats():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, port=5000)

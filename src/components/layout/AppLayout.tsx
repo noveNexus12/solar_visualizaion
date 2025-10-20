@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
 import { LayoutDashboard, Map, BarChart3, Bell, RefreshCw, Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import Logout from '../../pages/Logout';
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
@@ -32,6 +33,7 @@ export default function AppLayout() {
               <h1 className="text-xl font-bold text-foreground">Solar Monitor</h1>
             </div>
           </div>
+
           <nav className="flex-1 space-y-1 px-4">
             {navigation.map((item) => (
               <NavLink
@@ -50,6 +52,9 @@ export default function AppLayout() {
                 {item.name}
               </NavLink>
             ))}
+
+            {/* Logout Button */}
+            <Logout />
           </nav>
         </div>
       </aside>
@@ -57,7 +62,10 @@ export default function AppLayout() {
       {/* Mobile sidebar */}
       {sidebarOpen && (
         <div className="fixed inset-0 z-40 md:hidden">
-          <div className="fixed inset-0 bg-background/80 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
+          <div
+            className="fixed inset-0 bg-background/80 backdrop-blur-sm"
+            onClick={() => setSidebarOpen(false)}
+          />
           <div className="fixed inset-y-0 left-0 flex w-full max-w-xs flex-col bg-card border-r border-border">
             <div className="flex items-center justify-between px-6 py-6">
               <div className="flex items-center gap-2">
@@ -70,6 +78,7 @@ export default function AppLayout() {
                 <X className="h-5 w-5" />
               </Button>
             </div>
+
             <nav className="flex-1 space-y-1 px-4">
               {navigation.map((item) => (
                 <NavLink
@@ -89,6 +98,9 @@ export default function AppLayout() {
                   {item.name}
                 </NavLink>
               ))}
+
+              {/* Logout Button */}
+              <Logout />
             </nav>
           </div>
         </div>
