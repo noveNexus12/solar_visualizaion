@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
 import { LayoutDashboard, Map, BarChart3, Bell, RefreshCw, Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -21,20 +21,24 @@ export default function AppLayout() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Sidebar for desktop */}
-      <aside className="hidden md:fixed md:inset-y-0 md:flex md:w-64 md:flex-col">
-        <div className="flex flex-col flex-grow border-r border-border bg-card overflow-y-auto">
-          <div className="flex items-center flex-shrink-0 px-6 py-6">
+    <div className="min-h-screen bg-background text-foreground">
+      {/* Sidebar (Desktop) */}
+      <aside className="hidden md:fixed md:inset-y-0 md:flex md:w-64 md:flex-col shadow-lg bg-card border-r border-border">
+        <div className="flex flex-col flex-grow overflow-y-auto">
+          {/* Logo / Title */}
+          <div className="flex items-center px-6 py-6 border-b border-border">
             <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
+              <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center shadow-md">
                 <LayoutDashboard className="h-5 w-5 text-primary-foreground" />
               </div>
-              <h1 className="text-xl font-bold text-foreground">Solar Monitor</h1>
+              <h1 className="text-xl font-bold tracking-tight text-foreground">
+                Solar Monitor
+              </h1>
             </div>
           </div>
 
-          <nav className="flex-1 space-y-1 px-4">
+          {/* Navigation */}
+          <nav className="flex-1 space-y-1 px-4 py-4">
             {navigation.map((item) => (
               <NavLink
                 key={item.name}
@@ -53,23 +57,23 @@ export default function AppLayout() {
               </NavLink>
             ))}
 
-            {/* Logout Button */}
+            {/* Logout */}
             <Logout />
           </nav>
         </div>
       </aside>
 
-      {/* Mobile sidebar */}
+      {/* Mobile Sidebar */}
       {sidebarOpen && (
         <div className="fixed inset-0 z-40 md:hidden">
           <div
             className="fixed inset-0 bg-background/80 backdrop-blur-sm"
             onClick={() => setSidebarOpen(false)}
           />
-          <div className="fixed inset-y-0 left-0 flex w-full max-w-xs flex-col bg-card border-r border-border">
-            <div className="flex items-center justify-between px-6 py-6">
+          <div className="fixed inset-y-0 left-0 flex w-full max-w-xs flex-col bg-card border-r border-border shadow-lg">
+            <div className="flex items-center justify-between px-6 py-6 border-b border-border">
               <div className="flex items-center gap-2">
-                <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
+                <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center shadow-md">
                   <LayoutDashboard className="h-5 w-5 text-primary-foreground" />
                 </div>
                 <h1 className="text-xl font-bold text-foreground">Solar Monitor</h1>
@@ -79,7 +83,7 @@ export default function AppLayout() {
               </Button>
             </div>
 
-            <nav className="flex-1 space-y-1 px-4">
+            <nav className="flex-1 space-y-1 px-4 py-4">
               {navigation.map((item) => (
                 <NavLink
                   key={item.name}
@@ -98,17 +102,15 @@ export default function AppLayout() {
                   {item.name}
                 </NavLink>
               ))}
-
-              {/* Logout Button */}
               <Logout />
             </nav>
           </div>
         </div>
       )}
 
-      {/* Main content */}
+      {/* Main Content */}
       <div className="md:pl-64 flex flex-col flex-1">
-        <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60 px-4 sm:px-6">
+        <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-border bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 sm:px-6">
           <Button
             variant="ghost"
             size="icon"
@@ -129,7 +131,7 @@ export default function AppLayout() {
           </Button>
         </header>
 
-        <main className="flex-1 p-4 sm:p-6 lg:p-8">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 animate-fade-in">
           <Outlet />
         </main>
       </div>

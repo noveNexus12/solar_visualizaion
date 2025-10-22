@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { AlertTriangle, Bell, Info, CheckCircle } from 'lucide-react';
+import { useEffect, useState, useRef } from 'react';
+import { AlertTriangle, Bell, Info } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { apiService } from '@/services/api.service';
@@ -9,19 +9,26 @@ import { toast } from 'sonner';
 export default function AlertsView() {
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(true);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     loadAlerts();
-    const interval = setInterval(() => {
+
+    // Refresh every 15 seconds
+    intervalRef.current = setInterval(() => {
       loadAlerts();
-      // Simulate new alert notifications
+      // Occasionally show random notification
       if (alerts.length && Math.random() > 0.7) {
         const randomAlert = alerts[Math.floor(Math.random() * alerts.length)];
         if (randomAlert) showAlertNotification(randomAlert);
       }
     }, 15000);
-    return () => clearInterval(interval);
-  }, [alerts]);
+
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run only once on mount
 
   const loadAlerts = async () => {
     try {
@@ -52,7 +59,7 @@ export default function AlertsView() {
       case 'critical':
         return <AlertTriangle className="h-5 w-5 text-destructive" />;
       case 'warning':
-        return <Bell className="h-5 w-5 text-warning" />;
+        return <Bell className="h-5 w-5 text-yellow-500" />;
       default:
         return <Info className="h-5 w-5 text-primary" />;
     }
@@ -84,6 +91,7 @@ export default function AlertsView() {
 
   return (
     <div className="space-y-6 animate-fade-in">
+      {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-foreground">Alerts & Notifications</h1>
         <p className="text-muted-foreground mt-1">
@@ -91,39 +99,29 @@ export default function AlertsView() {
         </p>
       </div>
 
+      {/* Summary Cards */}
       <div className="grid gap-4 md:grid-cols-3">
-        <Card className="border-border">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Critical</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-destructive">
-              {alerts.filter(a => a.severity === 'critical').length}
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-border">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Warnings</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-warning">
-              {alerts.filter(a => a.severity === 'warning').length}
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-border">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Info</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-primary">
-              {alerts.filter(a => a.severity === 'info').length}
-            </div>
-          </CardContent>
-        </Card>
+        {[
+          { label: 'Critical', color: 'text-destructive', type: 'critical' },
+          { label: 'Warnings', color: 'text-yellow-500', type: 'warning' },
+          { label: 'Info', color: 'text-primary', type: 'info' },
+        ].map(({ label, color, type }) => (
+          <Card key={type} className="border-border">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                {label}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className={`text-2xl font-bold ${color}`}>
+                {alerts.filter((a) => a.severity === type).length}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
+      {/* Recent Alerts Section */}
       <Card className="border-border">
         <CardHeader>
           <CardTitle>Recent Alerts</CardTitle>
@@ -148,12 +146,9 @@ export default function AlertsView() {
                   <div className="flex items-start gap-4">
                     <div className="mt-0.5">{getAlertIcon(alert.severity)}</div>
                     <div className="flex-1 space-y-1">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <p className="font-medium text-foreground">{alert.message}</p>
-                        <Badge
-                          variant={getAlertColor(alert.severity) as any}
-                          className="capitalize"
-                        >
+                        <Badge variant={getAlertColor(alert.severity) as any} className="capitalize">
                           {alert.severity}
                         </Badge>
                         <Badge
@@ -163,15 +158,17 @@ export default function AlertsView() {
                           {alert.alert_status}
                         </Badge>
                       </div>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+
+                      <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                         <span>Pole: {alert.pole_id}</span>
                         <span>•</span>
                         <span>Type: {alert.alert_type}</span>
                         <span>•</span>
                         <span>{formatTimestamp(alert.timestamp)}</span>
                       </div>
+
                       {alert.technician_id && (
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                           <span>Technician: {alert.technician_id}</span>
                           {alert.action_taken && <span>• Action: {alert.action_taken}</span>}
                           {alert.remarks && <span>• Remarks: {alert.remarks}</span>}

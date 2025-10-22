@@ -8,13 +8,13 @@ import { LogIn, UserPlus } from "lucide-react";
 const Landing = () => {
   const navigate = useNavigate();
 
-  // ✅ Redirect if already logged in
+  // Redirect if already logged in
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
       navigate("/dashboard", { replace: true });
     }
-  }, []);
+  }, [navigate]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
@@ -51,7 +51,7 @@ const Landing = () => {
                 variant="hero"
                 size="xl"
                 onClick={() => navigate("/signin")}
-                className="group"
+                className="group flex items-center justify-center gap-2"
               >
                 <LogIn className="transition-transform group-hover:translate-x-1" />
                 Sign In
@@ -60,7 +60,7 @@ const Landing = () => {
                 variant="outline"
                 size="xl"
                 onClick={() => navigate("/signup")}
-                className="group border-2"
+                className="group flex items-center justify-center gap-2 border-2"
               >
                 <UserPlus className="transition-transform group-hover:scale-110" />
                 Sign Up
@@ -69,15 +69,16 @@ const Landing = () => {
 
             {/* Features */}
             <div className="grid grid-cols-3 gap-4 pt-8 border-t border-border">
-              <div className="space-y-1">
+              <div className="space-y-1 text-center">
                 <p className="text-2xl font-bold text-primary">24/7</p>
                 <p className="text-sm text-muted-foreground">Monitoring</p>
               </div>
-              <div className="space-y-1">
-                <p className="text-2xl font-bold text-secondary">Real-time</p>
-                <p className="text-sm text-muted-foreground">Analytics</p>
+              <div className="space-y-1 text-center">
+                <span className="text-2xl font-bold block text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary drop-shadow-md">
+                  Real-time Analytics
+                </span>
               </div>
-              <div className="space-y-1">
+              <div className="space-y-1 text-center">
                 <p className="text-2xl font-bold text-accent">Secure</p>
                 <p className="text-sm text-muted-foreground">Platform</p>
               </div>

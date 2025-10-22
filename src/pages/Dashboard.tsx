@@ -49,40 +49,41 @@ export default function Dashboard() {
       value: stats.total,
       icon: Activity,
       description: 'All registered poles',
-      color: 'text-primary',
-      bgColor: 'bg-primary/10',
+      color: 'text-blue-400',
+      bgColor: 'bg-blue-900/30',
     },
     {
       title: 'Active Poles',
       value: stats.active,
       icon: Zap,
       description: 'Currently operational',
-      color: 'text-success',
-      bgColor: 'bg-success/10',
+      color: 'text-green-400',
+      bgColor: 'bg-green-900/30',
     },
     {
       title: 'Inactive Poles',
       value: stats.inactive,
       icon: Power,
       description: 'Not operational',
-      color: 'text-muted-foreground',
-      bgColor: 'bg-muted/10',
+      color: 'text-gray-400',
+      bgColor: 'bg-gray-800/40',
     },
     {
       title: 'Active Alerts',
       value: stats.alerts,
       icon: AlertTriangle,
       description: 'Requires attention',
-      color: 'text-warning',
-      bgColor: 'bg-warning/10',
+      color: 'text-yellow-400',
+      bgColor: 'bg-yellow-900/30',
     },
   ];
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-6 animate-fade-in text-gray-100">
+      {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-foreground">Dashboard Overview</h1>
-        <p className="text-muted-foreground mt-1">
+        <h1 className="text-3xl font-bold text-white">Dashboard Overview</h1>
+        <p className="text-gray-400 mt-1">
           Monitor your smart devices in real-time
         </p>
       </div>
@@ -92,11 +93,11 @@ export default function Dashboard() {
         {kpiCards.map((card, index) => (
           <Card
             key={card.title}
-            className="hover:shadow-lg transition-shadow duration-300 animate-scale-in border-border"
+            className="hover:shadow-lg transition-shadow duration-300 bg-[#1e1e1e] border border-gray-800 rounded-xl animate-scale-in"
             style={{ animationDelay: `${index * 100}ms` }}
           >
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
+              <CardTitle className="text-sm font-medium text-gray-400">
                 {card.title}
               </CardTitle>
               <div className={`p-2 rounded-lg ${card.bgColor}`}>
@@ -104,44 +105,52 @@ export default function Dashboard() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-foreground">
+              <div className="text-3xl font-bold text-white">
                 {loading ? '...' : card.value}
               </div>
-              <p className="text-xs text-muted-foreground mt-1">{card.description}</p>
+              <p className="text-xs text-gray-400 mt-1">{card.description}</p>
             </CardContent>
           </Card>
         ))}
       </div>
 
       {/* System Status Section */}
-      <Card className="border-border">
+      <Card className="border border-gray-800 bg-[#1b1b1b] rounded-xl">
         <CardHeader>
-          <CardTitle>System Status</CardTitle>
+          <CardTitle className="text-white">System Status</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="h-3 w-3 rounded-full bg-success animate-pulse" />
-                <span className="text-sm font-medium">System Online</span>
+                <div className="h-3 w-3 rounded-full bg-green-500 animate-pulse" />
+                <span className="text-sm font-medium text-gray-200">
+                  System Online
+                </span>
               </div>
-              <span className="text-xs text-muted-foreground">All services operational</span>
+              <span className="text-xs text-gray-400">
+                All services operational
+              </span>
             </div>
 
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="h-3 w-3 rounded-full bg-success" />
-                <span className="text-sm font-medium">Database Connected</span>
+                <div className="h-3 w-3 rounded-full bg-green-500" />
+                <span className="text-sm font-medium text-gray-200">
+                  Database Connected
+                </span>
               </div>
-              <span className="text-xs text-muted-foreground">Latency: 10–15ms</span>
+              <span className="text-xs text-gray-400">Latency: 10–15ms</span>
             </div>
 
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="h-3 w-3 rounded-full bg-success" />
-                <span className="text-sm font-medium">Data Sync Active</span>
+                <div className="h-3 w-3 rounded-full bg-green-500" />
+                <span className="text-sm font-medium text-gray-200">
+                  Data Sync Active
+                </span>
               </div>
-              <span className="text-xs text-muted-foreground">Last sync: Just now</span>
+              <span className="text-xs text-gray-400">Last sync: Just now</span>
             </div>
           </div>
         </CardContent>
