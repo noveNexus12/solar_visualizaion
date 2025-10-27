@@ -1,14 +1,25 @@
 import { useState } from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
-import { LayoutDashboard, Map, BarChart3, Bell, RefreshCw, Menu, X } from 'lucide-react';
+import {
+  LayoutDashboard,
+  Map,
+  BarChart3,
+  Bell,
+  RefreshCw,
+  Menu,
+  X,
+  Download, // 👈 added new icon
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Logout from '../../pages/Logout';
 
+// 👇 Added Data Export link to navigation
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
   { name: 'Map View', href: '/map', icon: Map },
   { name: 'Charts', href: '/charts', icon: BarChart3 },
   { name: 'Alerts', href: '/alerts', icon: Bell },
+  { name: 'Data Export', href: '/data-export', icon: Download }, // 👈 new menu item
 ];
 
 export default function AppLayout() {

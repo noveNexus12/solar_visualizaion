@@ -15,9 +15,18 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 });
 
-// Custom marker icons
+// ✅ Custom marker icons
 const greenIcon = new L.Icon({
   iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+});
+
+const orangeIcon = new L.Icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-orange.png',
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
   iconSize: [25, 41],
   iconAnchor: [12, 41],
@@ -40,7 +49,7 @@ export default function MapView() {
 
   useEffect(() => {
     loadPoles();
-    const interval = setInterval(loadPoles, 15000); // Refresh every 15 seconds
+    const interval = setInterval(loadPoles, 15000); // refresh every 15 sec
     return () => clearInterval(interval);
   }, []);
 
@@ -55,6 +64,30 @@ export default function MapView() {
     }
   };
 
+  // ✅ Choose marker color based on display_status from backend
+  const getMarkerIcon = (status: string) => {
+    switch (status) {
+      case 'ONLINE':
+        return greenIcon;
+      case 'MAINTENANCE':
+        return orangeIcon;
+      default:
+        return redIcon;
+    }
+  };
+
+  // ✅ Choose badge color variant for popup
+  const getBadgeVariant = (status: string) => {
+    switch (status) {
+      case 'ONLINE':
+        return 'default';
+      case 'MAINTENANCE':
+        return 'outline';
+      default:
+        return 'destructive';
+    }
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
@@ -66,13 +99,18 @@ export default function MapView() {
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span>Pole Locations</span>
-            <div className="flex gap-3 text-sm font-normal">
+            {/* ✅ Legend updated */}
+            <div className="flex gap-4 text-sm font-normal">
               <div className="flex items-center gap-1.5">
-                <div className="h-3 w-3 rounded-full bg-success" />
+                <div className="h-3 w-3 rounded-full bg-green-500" />
                 <span className="text-muted-foreground">Online</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <div className="h-3 w-3 rounded-full bg-destructive" />
+                <div className="h-3 w-3 rounded-full bg-orange-400" />
+                <span className="text-muted-foreground">Maintenance</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="h-3 w-3 rounded-full bg-red-500" />
                 <span className="text-muted-foreground">Offline</span>
               </div>
             </div>
@@ -95,19 +133,23 @@ export default function MapView() {
                   <Marker
                     key={pole.pole_id}
                     position={[pole.latitude, pole.longitude]}
-                    icon={pole.status === 'ON' ? greenIcon : redIcon}
+                    icon={getMarkerIcon(pole.display_status)}
                   >
                     <Popup>
-                      <div className="space-y-2 min-w-[200px]">
+                      <div className="space-y-2 min-w-[220px]">
                         <div className="font-semibold text-lg">{pole.pole_id}</div>
                         <div className="space-y-1.5 text-sm">
                           <div className="flex items-center justify-between">
                             <span className="text-muted-foreground">Status:</span>
                             <Badge
-                              variant={pole.status === 'ON' ? 'default' : 'destructive'}
-                              className="ml-2"
+                              variant={getBadgeVariant(pole.display_status)}
+                              className={
+                                pole.display_status === 'MAINTENANCE'
+                                  ? 'border-orange-400 text-orange-500'
+                                  : ''
+                              }
                             >
-                              {pole.status}
+                              {pole.display_status}
                             </Badge>
                           </div>
                           <div className="flex items-center justify-between">
@@ -121,11 +163,19 @@ export default function MapView() {
                           <div className="flex items-center justify-between">
                             <span className="text-muted-foreground">Communication:</span>
                             <Badge
-                              variant={pole.communication_status === 'ONLINE' ? 'default' : 'outline'}
+                              variant={
+                                pole.communication_status === 'ONLINE' ? 'default' : 'outline'
+                              }
                               className="ml-2"
                             >
                               {pole.communication_status}
                             </Badge>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-muted-foreground">Last Update:</span>
+                            <span className="font-medium text-xs">
+                              {pole.update_time ? new Date(pole.update_time).toLocaleString() : 'N/A'}
+                            </span>
                           </div>
                         </div>
                       </div>

@@ -44,6 +44,13 @@ export default function ChartsView() {
     try {
       setLoading(true);
       const data = await apiService.getTelemetryData({ pole_id: poleId });
+
+      // 🌅🌇 Filter to only include data around 6–7 AM or 6–7 PM
+      const filtered = (data || []).filter((d: TelemetryData) => {
+        const hour = new Date(d.timestamp).getHours();
+        return (hour >= 6 && hour < 7) || (hour >= 18 && hour < 19);
+      });
+      
       setTelemetryData(data || []);
     } catch (error) {
       console.error('Error loading telemetry data:', error);

@@ -17,7 +17,6 @@ export default function AlertsView() {
     // Refresh every 15 seconds
     intervalRef.current = setInterval(() => {
       loadAlerts();
-      // Occasionally show random notification
       if (alerts.length && Math.random() > 0.7) {
         const randomAlert = alerts[Math.floor(Math.random() * alerts.length)];
         if (randomAlert) showAlertNotification(randomAlert);
@@ -28,7 +27,7 @@ export default function AlertsView() {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Run only once on mount
+  }, []);
 
   const loadAlerts = async () => {
     try {
@@ -54,8 +53,11 @@ export default function AlertsView() {
     });
   };
 
-  const getAlertIcon = (severity: string) => {
-    switch (severity) {
+  const getAlertIcon = (alert: Alert) => {
+    if (alert.alert_status === 'RESOLVED') {
+      return <Info className="h-5 w-5 text-primary" />;
+    }
+    switch (alert.severity) {
       case 'critical':
         return <AlertTriangle className="h-5 w-5 text-destructive" />;
       case 'warning':
@@ -65,8 +67,9 @@ export default function AlertsView() {
     }
   };
 
-  const getAlertColor = (severity: string) => {
-    switch (severity) {
+  const getAlertColor = (alert: Alert) => {
+    if (alert.alert_status === 'RESOLVED') return 'secondary';
+    switch (alert.severity) {
       case 'critical':
         return 'destructive';
       case 'warning':
@@ -80,7 +83,6 @@ export default function AlertsView() {
     const date = new Date(timestamp);
     const now = new Date();
     const diff = Math.floor((now.getTime() - date.getTime()) / 1000 / 60);
-
     if (diff < 1) return 'Just now';
     if (diff < 60) return `${diff} min ago`;
     const hours = Math.floor(diff / 60);
@@ -114,7 +116,10 @@ export default function AlertsView() {
             </CardHeader>
             <CardContent>
               <div className={`text-2xl font-bold ${color}`}>
-                {alerts.filter((a) => a.severity === type).length}
+              {alerts.filter((a) => {
+                  if (type === 'info') return a.alert_status === 'RESOLVED';
+                  return a.severity === type && a.alert_status !== 'RESOLVED';
+          }).length}
               </div>
             </CardContent>
           </Card>
@@ -138,46 +143,68 @@ export default function AlertsView() {
             </div>
           ) : (
             <div className="space-y-4">
-              {alerts.map((alert) => (
-                <div
-                  key={alert.id}
-                  className="flex flex-col gap-2 p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors"
-                >
-                  <div className="flex items-start gap-4">
-                    <div className="mt-0.5">{getAlertIcon(alert.severity)}</div>
-                    <div className="flex-1 space-y-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <p className="font-medium text-foreground">{alert.message}</p>
-                        <Badge variant={getAlertColor(alert.severity) as any} className="capitalize">
-                          {alert.severity}
-                        </Badge>
-                        <Badge
-                          variant={alert.alert_status === 'RESOLVED' ? 'secondary' : 'destructive'}
-                          className="capitalize"
-                        >
-                          {alert.alert_status}
-                        </Badge>
-                      </div>
+                          {alerts.map((alert) => (
+              <div
+                key={alert.id}
+                className={`flex flex-col gap-2 p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors ${
+                  alert.alert_status === 'RESOLVED'
+                    ? 'bg-muted/40 border-border/70'
+                    : ''
+                }`}
+              >
+                <div className="flex items-start gap-4">
+                  <div className="mt-0.5">{getAlertIcon(alert)}</div>
+                  <div className="flex-1 space-y-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="font-medium text-foreground">
+                        {alert.message}
+                      </p>
 
-                      <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                        <span>Pole: {alert.pole_id}</span>
-                        <span>•</span>
-                        <span>Type: {alert.alert_type}</span>
-                        <span>•</span>
-                        <span>{formatTimestamp(alert.timestamp)}</span>
-                      </div>
+                      {/* ✅ FIXED LABEL */}
+                      <Badge
+                        variant={getAlertColor(alert) as any}
+                        className="capitalize"
+                      >
+                        {alert.alert_status === 'RESOLVED'
+                          ? 'info'
+                          : alert.severity}
+                      </Badge>
 
-                      {alert.technician_id && (
-                        <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                          <span>Technician: {alert.technician_id}</span>
-                          {alert.action_taken && <span>• Action: {alert.action_taken}</span>}
-                          {alert.remarks && <span>• Remarks: {alert.remarks}</span>}
-                        </div>
-                      )}
+                      <Badge
+                        variant={
+                          alert.alert_status === 'RESOLVED'
+                            ? 'secondary'
+                            : 'destructive'
+                        }
+                        className="capitalize"
+                      >
+                        {alert.alert_status}
+                      </Badge>
                     </div>
+
+                    <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                      <span>Pole: {alert.pole_id}</span>
+                      <span>•</span>
+                      <span>Type: {alert.alert_type}</span>
+                      <span>•</span>
+                      <span>{formatTimestamp(alert.timestamp)}</span>
+                    </div>
+
+                    {alert.technician_id && (
+                      <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                        <span>Technician: {alert.technician_id}</span>
+                        {alert.action_taken && (
+                          <span>• Action: {alert.action_taken}</span>
+                        )}
+                        {alert.remarks && (
+                          <span>• Remarks: {alert.remarks}</span>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
-              ))}
+              </div>
+            ))}
             </div>
           )}
         </CardContent>
