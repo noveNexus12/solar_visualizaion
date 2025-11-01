@@ -1,13 +1,18 @@
-import { useEffect, useState } from 'react';
-import { Activity, Zap, AlertTriangle, Power } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { apiService } from '@/services/api.service';
+import { useEffect, useState } from "react";
+import { Activity, Zap, AlertTriangle, Power, User } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { apiService } from "@/services/api.service";
 
 interface Stats {
   total: number;
   active: number;
   inactive: number;
   alerts: number;
+}
+
+interface UserInfo {
+  name: string;
+  role: string;
 }
 
 export default function Dashboard() {
@@ -17,13 +22,42 @@ export default function Dashboard() {
     inactive: 0,
     alerts: 0,
   });
+  const [user, setUser] = useState<UserInfo | null>(null);
   const [loading, setLoading] = useState(true);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     loadStats();
+    loadUser();
     const interval = setInterval(loadStats, 15000); // refresh every 15s
     return () => clearInterval(interval);
   }, []);
+
+  const loadUser = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        window.location.href = "/signin";
+        return;
+      }
+
+      const res = await fetch("http://127.0.0.1:5000/api/auth/user-info", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setUser(data);
+      } else {
+        console.warn("Failed to fetch user info:", res.status);
+      }
+    } catch (err) {
+      console.error("Error loading user:", err);
+    }
+  };
 
   const loadStats = async () => {
     try {
@@ -37,7 +71,7 @@ export default function Dashboard() {
         });
       }
     } catch (error) {
-      console.error('Error loading stats:', error);
+      console.error("Error loading stats:", error);
     } finally {
       setLoading(false);
     }
@@ -45,47 +79,76 @@ export default function Dashboard() {
 
   const kpiCards = [
     {
-      title: 'Total Poles',
+      title: "Total Poles",
       value: stats.total,
       icon: Activity,
-      description: 'All registered poles',
-      color: 'text-blue-400',
-      bgColor: 'bg-blue-900/30',
+      description: "All registered poles",
+      color: "text-blue-400",
+      bgColor: "bg-blue-900/30",
     },
     {
-      title: 'Active Poles',
+      title: "Active Poles",
       value: stats.active,
       icon: Zap,
-      description: 'Currently operational',
-      color: 'text-green-400',
-      bgColor: 'bg-green-900/30',
+      description: "Currently operational",
+      color: "text-green-400",
+      bgColor: "bg-green-900/30",
     },
     {
-      title: 'Inactive Poles',
+      title: "Inactive Poles",
       value: stats.inactive,
       icon: Power,
-      description: 'Not operational',
-      color: 'text-gray-400',
-      bgColor: 'bg-gray-800/40',
+      description: "Not operational",
+      color: "text-gray-400",
+      bgColor: "bg-gray-800/40",
     },
     {
-      title: 'Active Alerts',
+      title: "Active Alerts",
       value: stats.alerts,
       icon: AlertTriangle,
-      description: 'Requires attention',
-      color: 'text-yellow-400',
-      bgColor: 'bg-yellow-900/30',
+      description: "Requires attention",
+      color: "text-yellow-400",
+      bgColor: "bg-yellow-900/30",
     },
   ];
 
   return (
-    <div className="space-y-6 animate-fade-in text-gray-100">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-white">Dashboard Overview</h1>
-        <p className="text-gray-400 mt-1">
-          Monitor your smart devices in real-time
-        </p>
+    <div className="space-y-6 animate-fade-in text-gray-100 relative">
+      {/* Header with user icon */}
+      <div className="flex justify-between items-start">
+        <div>
+          <h1 className="text-3xl font-bold text-white">Dashboard Overview</h1>
+          <p className="text-gray-400 mt-1">
+            Monitor your smart devices in real-time
+          </p>
+        </div>
+
+        {/* User Icon */}
+        <div className="relative">
+          <div
+            onClick={() => setMenuOpen(!menuOpen)}
+            className="h-10 w-10 rounded-full bg-emerald-700 flex items-center justify-center cursor-pointer hover:ring-2 hover:ring-emerald-400 transition"
+          >
+            <User className="text-white h-5 w-5" />
+          </div>
+
+          {menuOpen && user && (
+            <div className="absolute right-0 mt-2 w-48 bg-[#1e1e1e] border border-gray-700 rounded-lg shadow-lg p-3 z-50">
+              <p className="text-sm font-semibold text-white">{user.name}</p>
+              <p className="text-xs text-gray-400 capitalize">{user.role}</p>
+              <hr className="my-2 border-gray-700" />
+              <button
+                onClick={() => {
+                  localStorage.removeItem("token");
+                  window.location.href = "/signin";
+                }}
+                className="w-full text-left text-sm text-red-400 hover:text-red-300 transition"
+              >
+                Log Out
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* KPI Cards */}
@@ -106,7 +169,7 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-white">
-                {loading ? '...' : card.value}
+                {loading ? "..." : card.value}
               </div>
               <p className="text-xs text-gray-400 mt-1">{card.description}</p>
             </CardContent>

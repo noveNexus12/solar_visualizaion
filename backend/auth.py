@@ -87,3 +87,33 @@ def signin():
         'token': token,
         'role': user['role']
     })
+# -------------------------------
+# 🔹 GET USER INFO (from token)
+# -------------------------------
+# -------------------------------
+# 🔹 GET USER INFO (from token)
+# -------------------------------
+@auth_bp.route('/user-info', methods=['GET'])
+def get_user_info():
+    token = request.headers.get('Authorization', '').replace('Bearer ', '')
+    if not token:
+        return jsonify({'error': 'Token missing'}), 401
+
+    try:
+        decoded = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+        user_id = decoded['user_id']
+    except jwt.ExpiredSignatureError:
+        return jsonify({'error': 'Token expired'}), 401
+    except Exception:
+        return jsonify({'error': 'Invalid token'}), 401
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT name, role FROM users WHERE id = %s", (user_id,))
+    user = cursor.fetchone()
+    conn.close()
+
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+
+    return jsonify(user)

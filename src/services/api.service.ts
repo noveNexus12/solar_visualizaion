@@ -17,11 +17,10 @@ export const apiService = {
 
   // Get telemetry data
   getTelemetryData: async ({ pole_id }: { pole_id: string }) => {
-  const response = await fetch(`${API_BASE_URL}/telemetry?pole_id=${pole_id}`);
-  if (!response.ok) throw new Error('Failed to fetch telemetry data');
-  return await response.json();
-},
-
+    const response = await fetch(`${API_BASE_URL}/telemetry?pole_id=${pole_id}`);
+    if (!response.ok) throw new Error('Failed to fetch telemetry data');
+    return await response.json();
+  },
 
   // Get alerts
   getAlerts: async () => {
@@ -30,10 +29,26 @@ export const apiService = {
     return await response.json();
   },
 
-  // Get dashboard stats (optional – backend can compute this)
+  // Get dashboard stats
   getStats: async () => {
     const response = await fetch(`${API_BASE_URL}/stats`);
     if (!response.ok) throw new Error('Failed to fetch stats');
     return await response.json();
+  },
+
+  // Get current user
+  getCurrentUser: async () => {
+    const res = await fetch(`${API_BASE_URL}/auth/me`, {
+      credentials: 'include',
+    });
+    return await res.json();
+  },
+
+  // Logout
+  logout: async () => {
+    await fetch(`${API_BASE_URL}/auth/logout`, {
+      method: 'POST',
+      credentials: 'include',
+    });
   },
 };

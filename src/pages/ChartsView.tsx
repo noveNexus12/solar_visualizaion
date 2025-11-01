@@ -1,7 +1,4 @@
-import { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { apiService } from '@/services/api.service';
-import { TelemetryData, Pole } from '@/lib/mockData';
+import { useEffect, useState } from "react";
 import {
   LineChart, Line,
   BarChart, Bar,
@@ -9,24 +6,47 @@ import {
   XAxis, YAxis,
   CartesianGrid, Tooltip, Legend,
   ResponsiveContainer
-} from 'recharts';
+} from "recharts";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { apiService } from "@/services/api.service";
 
+// -------------------- Types --------------------
+interface Pole {
+  pole_id: string;
+  cluster_id: string;
+}
+
+interface TelemetryData {
+  pole_id: string;
+  status?: "ON" | "OFF";
+  solar_voltage?: number;
+  battery_voltage?: number;
+  energy_generated?: number;
+  energy_consumed?: number;
+  battery_percentage?: number;
+  load_current?: number;
+  light_intensity?: number;
+  signal_strength?: number;
+  timestamp: string;
+}
+
+// -------------------- Component --------------------
 export default function ChartsView() {
   const [telemetryData, setTelemetryData] = useState<TelemetryData[]>([]);
   const [poles, setPoles] = useState<Pole[]>([]);
-  const [selectedPole, setSelectedPole] = useState<string>('');
+  const [selectedPole, setSelectedPole] = useState<string>("");
   const [loading, setLoading] = useState(true);
 
-  // Load available poles on mount
+  // Fetch poles
   useEffect(() => {
     loadPoles();
   }, []);
 
-  // Load telemetry data for selected pole and auto-refresh hourly
+  // Fetch telemetry data periodically
   useEffect(() => {
     if (!selectedPole) return;
     loadTelemetryData(selectedPole);
-    const interval = setInterval(() => loadTelemetryData(selectedPole), 3600000); // every 1 hour
+    const interval = setInterval(() => loadTelemetryData(selectedPole), 60000); // every 1 min
     return () => clearInterval(interval);
   }, [selectedPole]);
 
@@ -36,7 +56,7 @@ export default function ChartsView() {
       setPoles(data || []);
       if (data?.length > 0) setSelectedPole(data[0].pole_id);
     } catch (error) {
-      console.error('Error loading poles:', error);
+      console.error("Error loading poles:", error);
     }
   };
 
@@ -44,48 +64,45 @@ export default function ChartsView() {
     try {
       setLoading(true);
       const data = await apiService.getTelemetryData({ pole_id: poleId });
-
-      // 🌅🌇 Filter to only include data around 6–7 AM or 6–7 PM
-      const filtered = (data || []).filter((d: TelemetryData) => {
-        const hour = new Date(d.timestamp).getHours();
-        return (hour >= 6 && hour < 7) || (hour >= 18 && hour < 19);
-      });
-      
       setTelemetryData(data || []);
     } catch (error) {
-      console.error('Error loading telemetry data:', error);
+      console.error("Error loading telemetry data:", error);
     } finally {
       setLoading(false);
     }
   };
+
+  const latest = telemetryData.at(-1);
 
   const formatTime = (timestamp: string) => {
     const date = new Date(timestamp);
     return `${date.getHours()}:00`;
   };
 
-  // Prepare data for charts
-  const chartData = telemetryData.map((data) => ({
-    time: formatTime(data.timestamp),
-    voltage: parseFloat(data.solar_voltage?.toFixed(2) || '0'),
-    batteryVoltage: parseFloat(data.battery_voltage?.toFixed(2) || '0'),
-    generated: parseFloat(data.energy_generated?.toFixed(2) || '0'),
-    consumed: parseFloat(data.energy_consumed?.toFixed(2) || '0'),
-    battery: parseFloat(data.battery_percentage?.toFixed(1) || '0'),
-    current: parseFloat(data.load_current?.toFixed(2) || '0'),
-    light: parseFloat(data.light_intensity?.toFixed(2) || '0'),
-    signal: data.signal_strength ?? 0,
+  // Chart-friendly data
+  const chartData = telemetryData.map((d) => ({
+    time: formatTime(d.timestamp),
+    voltage: parseFloat(d.solar_voltage?.toFixed(2) || "0"),
+    batteryVoltage: parseFloat(d.battery_voltage?.toFixed(2) || "0"),
+    generated: parseFloat(d.energy_generated?.toFixed(2) || "0"),
+    consumed: parseFloat(d.energy_consumed?.toFixed(2) || "0"),
+    battery: parseFloat(d.battery_percentage?.toFixed(1) || "0"),
+    current: parseFloat(d.load_current?.toFixed(2) || "0"),
+    light: parseFloat(d.light_intensity?.toFixed(2) || "0"),
+    signal: d.signal_strength ?? 0,
   }));
 
-  const currentTelemetry = telemetryData.at(-1);
-
+  // -------------------- UI --------------------
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Page Header */}
+      {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-foreground">Telemetry Charts</h1>
+        <h1 className="text-3xl font-bold text-foreground">Solar Pole Dashboard</h1>
         <p className="text-muted-foreground mt-1">
-          Select a pole to view its performance metrics
+          Monitor ON/OFF status, voltage, and energy metrics of each pole.
+        </p>
+        <p className="text-xs text-muted-foreground mt-1">
+          (Auto-refreshes every 1 minute; major updates at <b>6:45 AM</b> & <b>6:45 PM</b>)
         </p>
       </div>
 
@@ -108,66 +125,51 @@ export default function ChartsView() {
         </select>
       </div>
 
-      {/* Loading State */}
+      {/* Status & Charts */}
       {loading ? (
         <div className="flex items-center justify-center h-96 text-muted-foreground">
-          Loading charts...
+          Loading data...
+        </div>
+      ) : !latest ? (
+        <div className="flex items-center justify-center h-96 text-muted-foreground">
+          No telemetry data available yet.
         </div>
       ) : (
         <div className="grid gap-6 md:grid-cols-2">
-          {/* Solar & Battery Voltage Line Chart */}
-          <Card className="border-border md:col-span-2 hover:shadow-lg transition-shadow duration-300">
+          {/* Status Card */}
+          <Card className="border-border hover:shadow-lg transition-shadow duration-300 flex flex-col items-center justify-center h-96">
             <CardHeader>
-              <CardTitle>Solar & Battery Voltage (Last 24h)</CardTitle>
+              <CardTitle>{selectedPole} — Current Status</CardTitle>
             </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="time" tick={{ fontSize: 12 }} />
-                  <YAxis tick={{ fontSize: 12 }} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: 'hsl(var(--card))',
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '0.5rem',
-                    }}
-                  />
-                  <Legend />
-                  <Line type="monotone" dataKey="voltage" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} name="Solar Voltage (V)" />
-                  <Line type="monotone" dataKey="batteryVoltage" stroke="hsl(var(--success))" strokeWidth={2} dot={false} name="Battery Voltage (V)" />
-                </LineChart>
-              </ResponsiveContainer>
+            <CardContent className="flex flex-col items-center justify-center space-y-6">
+              <div
+                className={`w-40 h-40 rounded-full transition-all duration-700 ${
+                  latest.status === "ON"
+                    ? "bg-green-500 animate-pulse"
+                    : "bg-red-700 animate-pulse"
+                }`}
+              ></div>
+
+              <p
+                className={`text-xl font-semibold ${
+                  latest.status === "ON" ? "text-green-600" : "text-red-700"
+                }`}
+              >
+                {latest.status === "ON"
+                  ? "Pole is ON (Active)"
+                  : "Pole is OFF (Inactive)"}
+              </p>
+
+              <p className="text-sm text-muted-foreground">
+                Signal Strength: {latest.signal_strength ?? 0} dBm
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Last updated: {new Date(latest.timestamp).toLocaleString()}
+              </p>
             </CardContent>
           </Card>
 
-          {/* Energy Generated vs Consumed */}
-          <Card className="border-border md:col-span-2 hover:shadow-lg transition-shadow duration-300">
-            <CardHeader>
-              <CardTitle>Energy Generated vs Consumed</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="time" tick={{ fontSize: 12 }} />
-                  <YAxis tick={{ fontSize: 12 }} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: 'hsl(var(--card))',
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '0.5rem',
-                    }}
-                  />
-                  <Legend />
-                  <Bar dataKey="generated" fill="hsl(var(--success))" name="Generated (Wh)" />
-                  <Bar dataKey="consumed" fill="hsl(var(--warning))" name="Consumed (Wh)" />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-
-          {/* Battery Gauge */}
+          {/* Battery Level Gauge */}
           <Card className="border-border hover:shadow-lg transition-shadow duration-300">
             <CardHeader>
               <CardTitle>Current Battery Level</CardTitle>
@@ -183,21 +185,21 @@ export default function ChartsView() {
                       r="40"
                       fill="none"
                       stroke={
-                        (currentTelemetry?.battery_percentage ?? 0) > 50
-                          ? 'hsl(var(--success))'
-                          : (currentTelemetry?.battery_percentage ?? 0) > 20
-                          ? 'hsl(var(--warning))'
-                          : 'hsl(var(--destructive))'
+                        (latest.battery_percentage ?? 0) > 50
+                          ? "hsl(var(--success))"
+                          : (latest.battery_percentage ?? 0) > 20
+                          ? "hsl(var(--warning))"
+                          : "hsl(var(--destructive))"
                       }
                       strokeWidth="8"
-                      strokeDasharray={`${(currentTelemetry?.battery_percentage || 0) * 2.51} 251`}
+                      strokeDasharray={`${(latest.battery_percentage || 0) * 2.51} 251`}
                       strokeLinecap="round"
                       transform="rotate(-90 50 50)"
                     />
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
                     <span className="text-4xl font-bold text-foreground">
-                      {currentTelemetry?.battery_percentage?.toFixed(0) || 0}%
+                      {latest.battery_percentage?.toFixed(0) || 0}%
                     </span>
                     <span className="text-xs text-muted-foreground mt-1">Battery</span>
                   </div>
@@ -206,54 +208,63 @@ export default function ChartsView() {
             </CardContent>
           </Card>
 
-          {/* Current Flow Area Chart */}
-          <Card className="border-border hover:shadow-lg transition-shadow duration-300">
+          {/* Voltage Line Chart */}
+          <Card className="md:col-span-2 border-border hover:shadow-lg transition-shadow duration-300">
             <CardHeader>
-              <CardTitle>Current Flow (Load vs Battery)</CardTitle>
+              <CardTitle>Solar & Battery Voltage</CardTitle>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={240}>
-                <AreaChart data={chartData}>
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="time" tick={{ fontSize: 12 }} />
-                  <YAxis tick={{ fontSize: 12 }} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: 'hsl(var(--card))',
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '0.5rem',
-                    }}
-                  />
+                  <XAxis dataKey="time" />
+                  <YAxis />
+                  <Tooltip />
                   <Legend />
-                  <Area type="monotone" dataKey="current" stroke="hsl(var(--accent))" fill="hsl(var(--accent))" fillOpacity={0.3} name="Load Current (A)" />
-                  <Area type="monotone" dataKey="battery" stroke="hsl(var(--success))" fill="hsl(var(--success))" fillOpacity={0.3} name="Battery (%)" />
-                </AreaChart>
+                  <Line type="monotone" dataKey="voltage" stroke="hsl(var(--primary))" name="Solar Voltage (V)" />
+                  <Line type="monotone" dataKey="batteryVoltage" stroke="hsl(var(--success))" name="Battery Voltage (V)" />
+                </LineChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
 
-          {/* Light Intensity & Signal Strength */}
-          <Card className="border-border md:col-span-2 hover:shadow-lg transition-shadow duration-300">
+          {/* Energy Generated vs Consumed */}
+          <Card className="md:col-span-2 border-border hover:shadow-lg transition-shadow duration-300">
             <CardHeader>
-              <CardTitle>Light Intensity & Signal Strength</CardTitle>
+              <CardTitle>Energy Generated vs Consumed</CardTitle>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={240}>
-                <LineChart data={chartData}>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="time" tick={{ fontSize: 12 }} />
-                  <YAxis tick={{ fontSize: 12 }} />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: 'hsl(var(--card))',
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '0.5rem',
-                    }}
-                  />
+                  <XAxis dataKey="time" />
+                  <YAxis />
+                  <Tooltip />
                   <Legend />
-                  <Line type="monotone" dataKey="light" stroke="hsl(var(--warning))" strokeWidth={2} dot={false} name="Light Intensity (lux)" />
-                  <Line type="monotone" dataKey="signal" stroke="hsl(var(--destructive))" strokeWidth={2} dot={false} name="Signal Strength" />
-                </LineChart>
+                  <Bar dataKey="generated" fill="hsl(var(--success))" name="Generated (Wh)" />
+                  <Bar dataKey="consumed" fill="hsl(var(--warning))" name="Consumed (Wh)" />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          {/* Current & Light Intensity */}
+          <Card className="md:col-span-2 border-border hover:shadow-lg transition-shadow duration-300">
+            <CardHeader>
+              <CardTitle>Load Current, Light & Signal</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={260}>
+                <AreaChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="time" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Area type="monotone" dataKey="current" stroke="hsl(var(--accent))" fillOpacity={0.3} name="Load Current (A)" />
+                  <Area type="monotone" dataKey="light" stroke="hsl(var(--warning))" fillOpacity={0.3} name="Light Intensity (lux)" />
+                  <Area type="monotone" dataKey="signal" stroke="hsl(var(--destructive))" fillOpacity={0.3} name="Signal Strength" />
+                </AreaChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
