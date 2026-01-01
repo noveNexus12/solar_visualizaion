@@ -27,8 +27,8 @@ const SignIn = () => {
     }
 
     try {
-      const API_BASE_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:5000";
-      const response = await fetch(`${API_BASE_URL}/api/auth/signin`, {
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://solarlightmonitoring.technnovxp.com/api";
+      const response = await fetch(`${API_BASE_URL}/auth/signin`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),

@@ -1,4 +1,5 @@
-from flask import Flask, jsonify, request, Response
+from flask import Flask, jsonify, request, Response, send_from_directory
+import os
 from flask_cors import CORS
 from auth import auth_bp
 from db import get_db_connection
@@ -7,14 +8,21 @@ import datetime
 import io
 import csv
 
-app = Flask(__name__)
+# Serve frontend build (vite -> dist) when available. The built files are expected
+# to live at ../dist relative to this backend folder.
+frontend_dist = os.path.normpath(os.path.join(os.path.dirname(__file__), '..', 'dist'))
+if os.path.exists(frontend_dist):
+    app = Flask(__name__, static_folder=frontend_dist, static_url_path='')
+else:
+    app = Flask(__name__)
 
 # ✅ CORS for frontend (React/Vite/Other Dev Servers)
 CORS(app, resources={r"/api/*": {"origins": [
-    "http://localhost:5173",  # Vite default
-    "http://127.0.0.1:5173",
-    "http://localhost:8080",  # Vue/React alt
-    "http://127.0.0.1:8080"
+    #"http://localhost:5173",  # Vite default
+    #"http://127.0.0.1:5173",
+    #"http://localhost:8080",  # Vue/React alt
+    #"http://127.0.0.1:8080",
+    "http://light.technnovxp.com/"
 ]}}, supports_credentials=True)
 
 # ✅ Register authentication routes
@@ -25,6 +33,38 @@ app.register_blueprint(iot_bp)
 # =====================================================================
 # 🏗 API ROUTES
 # =====================================================================
+
+
+@app.route('/', methods=['GET'])
+def index():
+    """If a frontend build exists, serve it. Otherwise return JSON status."""
+    if app.static_folder and os.path.exists(os.path.join(app.static_folder, 'index.html')):
+        return send_from_directory(app.static_folder, 'index.html')
+    return jsonify({
+        "message": "Solar visualization backend is running",
+        "available_endpoints": [
+            "/api/poles",
+            "/api/poles/<pole_id>",
+            "/api/telemetry",
+            "/api/alerts",
+            "/api/stats",
+            "/api/export/<table_name>",
+            "/api/iot/data (POST)",
+            "/api/auth/signup (POST)",
+            "/api/auth/signin (POST)",
+        ]
+    })
+
+
+# Serve static files and provide SPA fallback for client-side routing
+@app.route('/<path:path>')
+def serve_spa(path: str):
+    if app.static_folder and os.path.exists(os.path.join(app.static_folder, path)):
+        return send_from_directory(app.static_folder, path)
+    if app.static_folder and os.path.exists(os.path.join(app.static_folder, 'index.html')):
+        return send_from_directory(app.static_folder, 'index.html')
+    return jsonify({'error': 'Not found'}), 404
+
 
 @app.route('/api/poles', methods=['GET'])
 def get_poles():
@@ -112,7 +152,7 @@ def get_telemetry():
     if pole_id:
         if mode == 'filtered':
             cursor.execute("""
-                SELECT pole_id, status, signal_strength, timestamp
+                SELECT pole_id, status, timestamp
                 FROM telemetry_data
                 WHERE pole_id = %s
                   AND (TIME(timestamp) BETWEEN '06:30:00' AND '07:00:00'
@@ -121,7 +161,7 @@ def get_telemetry():
             """, (pole_id,))
         else:
             cursor.execute("""
-                SELECT pole_id, status, signal_strength, timestamp
+                SELECT pole_id, status, timestamp
                 FROM telemetry_data
                 WHERE pole_id = %s
                 ORDER BY timestamp DESC
@@ -129,7 +169,7 @@ def get_telemetry():
             """, (pole_id,))
     else:
         cursor.execute("""
-            SELECT pole_id, status, signal_strength, timestamp
+            SELECT pole_id, status, timestamp
             FROM telemetry_data
             WHERE (TIME(timestamp) BETWEEN '06:30:00' AND '07:00:00')
                OR (TIME(timestamp) BETWEEN '18:00:00' AND '18:30:00')

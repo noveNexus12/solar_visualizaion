@@ -1,9 +1,23 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, type ComponentProps } from 'react';
 import { AlertTriangle, Bell, Info } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { apiService } from '@/services/api.service';
-import { Alert } from '@/lib/mockData';
+
+// Local Alert type — mockData.ts has been disabled in this workspace, so
+// declare the minimal shape used by this view here to keep the file self-contained.
+export type Alert = {
+  id: string;
+  pole_id: string;
+  message: string;
+  severity: 'critical' | 'warning' | 'info';
+  timestamp: string;
+  alert_status: 'ACTIVE' | 'RESOLVED' | 'PENDING';
+  alert_type?: string;
+  technician_id?: string;
+  action_taken?: string;
+  remarks?: string;
+};
 import { toast } from 'sonner';
 
 export default function AlertsView() {
@@ -162,7 +176,7 @@ export default function AlertsView() {
 
                       {/* ✅ FIXED LABEL */}
                       <Badge
-                        variant={getAlertColor(alert) as any}
+                        variant={getAlertColor(alert) as ComponentProps<typeof Badge>['variant']}
                         className="capitalize"
                       >
                         {alert.alert_status === 'RESOLVED'

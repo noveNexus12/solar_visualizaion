@@ -1,3 +1,6 @@
+// All mock data is currently commented out per request.
+// If you need to re-enable specific mock exports, remove the leading '//' from the relevant lines.
+
 // export interface Pole {
 //   pole_id: string;
 //   latitude: number;
@@ -24,16 +27,26 @@
 // }
 
 // export interface Alert {
-//   remarks: any;
-//   action_taken: any;
-//   technician_id: any;
-//   alert_status: any;
-//   alert_type: any;
+//   remarks?: string;
+//   action_taken?: string;
+//   technician_id?: string;
+//   alert_status: 'ACTIVE' | 'RESOLVED' | 'PENDING';
+//   alert_type: string;
 //   id: string;
 //   pole_id: string;
 //   message: string;
 //   severity: 'critical' | 'warning' | 'info';
 //   timestamp: string;
+// }
+
+// export interface Pole {
+//   pole_id: string;
+//   latitude: number;
+//   longitude: number;
+//   status: 'ON' | 'OFF';
+//   cluster_id: string;
+//   battery_percentage?: number;
+//   communication_status?: 'ONLINE' | 'OFFLINE';
 // }
 
 // export const mockPoles: Pole[] = [
@@ -64,39 +77,20 @@
 //     battery_percentage: 92,
 //     communication_status: 'ONLINE',
 //   },
-//   {
-//     pole_id: 'A04',
-//     latitude: 12.9716,
-//     longitude: 77.5946,
-//     status: 'ON',
-//     cluster_id: 'Bangalore_1',
-//     battery_percentage: 78,
-//     communication_status: 'ONLINE',
-//   },
-//   {
-//     pole_id: 'A05',
-//     latitude: 22.5726,
-//     longitude: 88.3639,
-//     status: 'ON',
-//     cluster_id: 'Kolkata_1',
-//     battery_percentage: 25,
-//     communication_status: 'ONLINE',
-//   },
-//   {
-//     pole_id: 'A06',
-//     latitude: 13.0827,
-//     longitude: 80.2707,
-//     status: 'OFF',
-//     cluster_id: 'Chennai_1',
-//     battery_percentage: 10,
-//     communication_status: 'OFFLINE',
-//   },
 // ];
+
+// export interface TelemetryData {
+//   timestamp: string;
+//   solar_voltage?: number;
+//   energy_generated?: number;
+//   energy_consumed?: number;
+//   battery_percentage?: number;
+//   load_current?: number;
+// }
 
 // export const generateTelemetryData = (): TelemetryData[] => {
 //   const data: TelemetryData[] = [];
 //   const now = new Date();
-  
 //   for (let i = 23; i >= 0; i--) {
 //     const timestamp = new Date(now.getTime() - i * 60 * 60 * 1000);
 //     data.push({
@@ -108,7 +102,6 @@
 //       load_current: 2 + Math.random() * 3,
 //     });
 //   }
-  
 //   return data;
 // };
 
@@ -118,6 +111,8 @@
 //     pole_id: 'A05',
 //     message: 'Low battery detected',
 //     severity: 'warning',
+//     alert_status: 'ACTIVE',
+//     alert_type: 'Battery',
 //     timestamp: new Date().toISOString(),
 //   },
 //   {
@@ -125,6 +120,8 @@
 //     pole_id: 'A02',
 //     message: 'Communication failure',
 //     severity: 'critical',
+//     alert_status: 'ACTIVE',
+//     alert_type: 'No Communication',
 //     timestamp: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
 //   },
 //   {
@@ -132,6 +129,8 @@
 //     pole_id: 'A06',
 //     message: 'Pole offline',
 //     severity: 'critical',
+//     alert_status: 'RESOLVED',
+//     alert_type: 'Manual Switch',
 //     timestamp: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
 //   },
 // ];

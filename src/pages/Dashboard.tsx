@@ -22,6 +22,7 @@ export default function Dashboard() {
     inactive: 0,
     alerts: 0,
   });
+
   const [user, setUser] = useState<UserInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -29,49 +30,34 @@ export default function Dashboard() {
   useEffect(() => {
     loadStats();
     loadUser();
-    const interval = setInterval(loadStats, 15000); // refresh every 15s
+    const interval = setInterval(loadStats, 15000);
     return () => clearInterval(interval);
   }, []);
 
   const loadUser = async () => {
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
+      const data = await apiService.getCurrentUser();
+      if (!data) {
         window.location.href = "/signin";
         return;
       }
-
-      const res = await fetch("http://127.0.0.1:5000/api/auth/user-info", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        setUser(data);
-      } else {
-        console.warn("Failed to fetch user info:", res.status);
-      }
+      setUser(data);
     } catch (err) {
-      console.error("Error loading user:", err);
+      console.error("User fetch failed:", err);
     }
   };
 
   const loadStats = async () => {
     try {
       const data = await apiService.getStats();
-      if (data) {
-        setStats({
-          total: data.total ?? 0,
-          active: data.active ?? 0,
-          inactive: data.inactive ?? 0,
-          alerts: data.alerts ?? 0,
-        });
-      }
-    } catch (error) {
-      console.error("Error loading stats:", error);
+      setStats({
+        total: data.total ?? 0,
+        active: data.active ?? 0,
+        inactive: data.inactive ?? 0,
+        alerts: data.alerts ?? 0,
+      });
+    } catch (err) {
+      console.error("Stats fetch failed:", err);
     } finally {
       setLoading(false);
     }
@@ -113,8 +99,8 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="space-y-6 animate-fade-in text-gray-100 relative">
-      {/* Header with user icon */}
+    <div className="space-y-6 text-gray-100 relative">
+      {/* Header */}
       <div className="flex justify-between items-start">
         <div>
           <h1 className="text-3xl font-bold text-white">Dashboard Overview</h1>
@@ -123,7 +109,7 @@ export default function Dashboard() {
           </p>
         </div>
 
-        {/* User Icon */}
+        {/* User Menu */}
         <div className="relative">
           <div
             onClick={() => setMenuOpen(!menuOpen)}
@@ -136,7 +122,9 @@ export default function Dashboard() {
             <div className="absolute right-0 mt-2 w-48 bg-[#1e1e1e] border border-gray-700 rounded-lg shadow-lg p-3 z-50">
               <p className="text-sm font-semibold text-white">{user.name}</p>
               <p className="text-xs text-gray-400 capitalize">{user.role}</p>
+
               <hr className="my-2 border-gray-700" />
+
               <button
                 onClick={() => {
                   localStorage.removeItem("token");
@@ -156,10 +144,9 @@ export default function Dashboard() {
         {kpiCards.map((card, index) => (
           <Card
             key={card.title}
-            className="hover:shadow-lg transition-shadow duration-300 bg-[#1e1e1e] border border-gray-800 rounded-xl animate-scale-in"
-            style={{ animationDelay: `${index * 100}ms` }}
+            className="hover:shadow-lg transition bg-[#1e1e1e] border border-gray-800 rounded-xl"
           >
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-gray-400">
                 {card.title}
               </CardTitle>
@@ -167,6 +154,7 @@ export default function Dashboard() {
                 <card.icon className={`h-5 w-5 ${card.color}`} />
               </div>
             </CardHeader>
+
             <CardContent>
               <div className="text-3xl font-bold text-white">
                 {loading ? "..." : card.value}
@@ -177,11 +165,12 @@ export default function Dashboard() {
         ))}
       </div>
 
-      {/* System Status Section */}
+      {/* System Status */}
       <Card className="border border-gray-800 bg-[#1b1b1b] rounded-xl">
         <CardHeader>
           <CardTitle className="text-white">System Status</CardTitle>
         </CardHeader>
+
         <CardContent>
           <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -213,7 +202,9 @@ export default function Dashboard() {
                   Data Sync Active
                 </span>
               </div>
-              <span className="text-xs text-gray-400">Last sync: Just now</span>
+              <span className="text-xs text-gray-400">
+                Last sync: Just now
+              </span>
             </div>
           </div>
         </CardContent>
